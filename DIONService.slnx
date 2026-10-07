@@ -1,0 +1,9 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="DIONService/DIONService.vcxproj" Id="9964c14c-77ec-4837-be6b-0b622ef4a2f7">
+    <BuildType Solution="Debug|x64" Project="Release" />
+  </Project>
+</Solution>
