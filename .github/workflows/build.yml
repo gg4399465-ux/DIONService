@@ -13,34 +13,40 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: List all files (Debug)
-      run: |
-        Write-Host "=== Repository Structure ==="
-        Get-ChildItem -Recurse -Include *.sln,*.vcxproj,*.cpp,*.h | Select-Object FullName
+    - name: List files
+      run: Get-ChildItem -Recurse | Select-Object FullName
       shell: pwsh
     
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
     
-    - name: Find and Build Solution
+    - name: Build DIONService
       run: |
+        $slnx = Get-ChildItem -Recurse -Filter "*.slnx" | Select-Object -First 1
         $sln = Get-ChildItem -Recurse -Filter "*.sln" | Select-Object -First 1
-        if (-not $sln) {
-          Write-Host "ERROR: No .sln file found!"
+        $vcxproj = Get-ChildItem -Recurse -Filter "*.vcxproj" | Select-Object -First 1
+        
+        if ($slnx) {
+          Write-Host "Found .slnx: $($slnx.FullName)"
+          # .slnx ใหม่ - ลองใช้ msbuild ตรงๆ
+          msbuild $slnx.FullName /p:Configuration=Release /p:Platform=x64
+        }
+        elseif ($sln) {
+          Write-Host "Found .sln: $($sln.FullName)"
+          msbuild $sln.FullName /p:Configuration=Release /p:Platform=x64
+        }
+        elseif ($vcxproj) {
+          Write-Host "Found .vcxproj: $($vcxproj.FullName)"
+          # Build vcxproj โดยตรง (ข้าม sln)
+          msbuild $vcxproj.FullName /p:Configuration=Release /p:Platform=x64
+        }
+        else {
+          Write-Host "ERROR: No project file found!"
           exit 1
         }
-        Write-Host "Found solution: $($sln.FullName)"
-        Write-Host "Building..."
-        msbuild $sln.FullName /p:Configuration=Release /p:Platform=x64
       shell: pwsh
     
-    - name: Find EXE
-      run: |
-        Write-Host "=== Searching for .exe ==="
-        Get-ChildItem -Recurse -Filter "DIONService.exe" | Select-Object FullName
-      shell: pwsh
-    
-    - name: Upload EXE
+    - name: Find and Upload EXE
       uses: actions/upload-artifact@v4
       with:
         name: DIONService-EXE
