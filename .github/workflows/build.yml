@@ -13,40 +13,31 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: List files
-      run: Get-ChildItem -Recurse | Select-Object FullName
-      shell: pwsh
-    
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
     
-    - name: Build DIONService
+    - name: Build DIONService.vcxproj (Direct)
       run: |
-        $slnx = Get-ChildItem -Recurse -Filter "*.slnx" | Select-Object -First 1
-        $sln = Get-ChildItem -Recurse -Filter "*.sln" | Select-Object -First 1
-        $vcxproj = Get-ChildItem -Recurse -Filter "*.vcxproj" | Select-Object -First 1
-        
-        if ($slnx) {
-          Write-Host "Found .slnx: $($slnx.FullName)"
-          # .slnx ใหม่ - ลองใช้ msbuild ตรงๆ
-          msbuild $slnx.FullName /p:Configuration=Release /p:Platform=x64
-        }
-        elseif ($sln) {
-          Write-Host "Found .sln: $($sln.FullName)"
-          msbuild $sln.FullName /p:Configuration=Release /p:Platform=x64
-        }
-        elseif ($vcxproj) {
-          Write-Host "Found .vcxproj: $($vcxproj.FullName)"
-          # Build vcxproj โดยตรง (ข้าม sln)
-          msbuild $vcxproj.FullName /p:Configuration=Release /p:Platform=x64
-        }
-        else {
-          Write-Host "ERROR: No project file found!"
+        Write-Host "=== Looking for .vcxproj ==="
+        $vcxproj = Get-ChildItem -Recurse -Filter "DIONService.vcxproj" | Select-Object -First 1
+        if (-not $vcxproj) {
+          Write-Host "ERROR: DIONService.vcxproj not found!"
+          Get-ChildItem -Recurse | Select-Object FullName
           exit 1
         }
+        Write-Host "Found: $($vcxproj.FullName)"
+        Write-Host "Building directly..."
+        
+        msbuild $vcxproj.FullName /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
       shell: pwsh
     
-    - name: Find and Upload EXE
+    - name: Find EXE
+      run: |
+        Write-Host "=== Searching for .exe ==="
+        Get-ChildItem -Recurse -Filter "DIONService.exe" | Select-Object FullName
+      shell: pwsh
+    
+    - name: Upload EXE
       uses: actions/upload-artifact@v4
       with:
         name: DIONService-EXE
