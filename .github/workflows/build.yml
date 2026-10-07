@@ -1,0 +1,28 @@
+name: Build DIONService
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+    
+    - name: Build DIONService
+      run: |
+        msbuild DIONService.sln /p:Configuration=Release /p:Platform=x64
+    
+    - name: Upload EXE
+      uses: actions/upload-artifact@v4
+      with:
+        name: DIONService-EXE
+        path: x64/Release/DIONService.exe
+        if-no-files-found: warn
