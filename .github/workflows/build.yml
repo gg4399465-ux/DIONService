@@ -13,16 +13,36 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
+    - name: List all files (Debug)
+      run: |
+        Write-Host "=== Repository Structure ==="
+        Get-ChildItem -Recurse -Include *.sln,*.vcxproj,*.cpp,*.h | Select-Object FullName
+      shell: pwsh
+    
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
     
-    - name: Build DIONService
+    - name: Find and Build Solution
       run: |
-        msbuild DIONService.sln /p:Configuration=Release /p:Platform=x64
+        $sln = Get-ChildItem -Recurse -Filter "*.sln" | Select-Object -First 1
+        if (-not $sln) {
+          Write-Host "ERROR: No .sln file found!"
+          exit 1
+        }
+        Write-Host "Found solution: $($sln.FullName)"
+        Write-Host "Building..."
+        msbuild $sln.FullName /p:Configuration=Release /p:Platform=x64
+      shell: pwsh
+    
+    - name: Find EXE
+      run: |
+        Write-Host "=== Searching for .exe ==="
+        Get-ChildItem -Recurse -Filter "DIONService.exe" | Select-Object FullName
+      shell: pwsh
     
     - name: Upload EXE
       uses: actions/upload-artifact@v4
       with:
         name: DIONService-EXE
-        path: x64/Release/DIONService.exe
+        path: '**/DIONService.exe'
         if-no-files-found: warn
